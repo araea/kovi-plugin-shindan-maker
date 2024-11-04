@@ -5,16 +5,14 @@
 
 Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+ 占卜项。
 
-## 使用
-
-### 前置
+## 前置
 
 1. 创建 Kovi 项目。
 2. 执行 `cargo kovi add shindan-maker -p`。
 3. 在 `src/main.rs` 中添加 `kovi_plugin_shindan_maker`。
 4. 运行后，资源目录为 `data/kovi-plugin-shindan-maker/*`。
 
-### 快速开始
+## 快速开始
 
 1. 发送 `神断列表` 查看神断命令列表。
 2. 发送神断命令，如 `抽老婆`，即可生成神断结果。
