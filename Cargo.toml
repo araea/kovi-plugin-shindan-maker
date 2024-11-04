@@ -10,7 +10,7 @@ repository = "https://github.com/araea/kovi-plugin-shindan-maker"
 keywords = ["kovi", "kovi-plugin", "shindan-maker", "fortune-tellings", "diagnosis"]
 
 [dependencies]
-kovi = "0.9"
+kovi = ">= 0.9"
 anyhow = "1.0"
 rand = "0.8.5"
 cdp-html-shot = "0.1"
