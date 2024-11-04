@@ -1,0 +1,21 @@
+[package]
+name = "kovi-plugin-shindan-maker"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Nawyjx <3373167460@qq.com>"]
+description = "Kovi 的 ShindanMaker 占卜插件。"
+categories = ["web-programming::http-client", "games"]
+repository = "https://github.com/araea/kovi-plugin-shindan-maker"
+keywords = ["kovi", "kovi-plugin", "shindan-maker", "fortune-tellings", "diagnosis"]
+
+[dependencies]
+kovi = "0.9"
+anyhow = "1.0"
+rand = "0.8.5"
+cdp-html-shot = "0.1"
+serde = { version = "1.0.214", features = ["derive"] }
+shindan-maker = { version = "0.1", features = ["html"] }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
