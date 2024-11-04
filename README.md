@@ -8,7 +8,7 @@ Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+
 ## 前置
 
 1. 创建 Kovi 项目。
-2. 执行 `cargo kovi add shindan-maker -p`。
+2. 执行 `cargo kovi add shindan-maker`。
 3. 在 `src/main.rs` 中添加 `kovi_plugin_shindan_maker`。
 
 ## 使用
