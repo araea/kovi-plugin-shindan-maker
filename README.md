@@ -21,33 +21,42 @@ Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+
 ## 配置
 
 * 资源目录 - `data/kovi-plugin-shindan-maker/*`
-  * 第一次运行时自动生成
+    * 第一次运行时自动生成
 
 ### `config.toml` - 插件配置
 
 ```toml
 # 频道过滤
 [channel]
-# 仅
-white = []
-# 排除
+# 频道白名单（只允许）
+white = ["123456789", "987654321"]
+
+# 频道黑名单（排除）
 black = ["123456789"]
 
-# 插件
+# 插件配置
 [plugin]
-# 仅 @ 机器人时响应（true / false）
+# 仅 @ 响应
 only_at = false
-# 指令前缀（示例：["!", "。"]）
+
+# 指令前缀
+# 示例：["!", "。"]
 prefixes = []
-# 响应时 @ 用户
+
+# 回复时 @
 is_at = true
-# 响应时带回复
-is_reply = false
-# 区域（Jp, En, Cn, Kr, Th）
-domain = "CN"
-# `随机神断` 时返回命令
+
+# 回复时引用
+is_quote = false
+
+# 神断网区域
+# 可选："Jp", "En", "Cn", "Kr", "Th"
+domain = "Cn"
+
+# `随机神断` 时提示命令
 random_return_command = true
-# 排行榜最多显示数量
+
+# 排行榜最多显示
 rank_max = 30
 ```
 
@@ -57,9 +66,15 @@ rank_max = 30
 [[command]]
 # 功能（勿改）
 function = "插件指令列表"
+
 # 指令名（可增删）
 commands = ["神断帮助", "bz"]
 ```
+
+### `shindans.toml` - 占卜项
+
+* 添加：使用 `添加神断` 指令。
+* 删除：直接编辑或使用 `删除神断` 指令。
 
 ## 致谢
 

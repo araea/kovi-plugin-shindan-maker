@@ -17,7 +17,7 @@ pub(crate) struct Plugin {
     pub(crate) only_at: bool,
     pub(crate) prefixes: Vec<String>,
     pub(crate) is_at: bool,
-    pub(crate) is_reply: bool,
+    pub(crate) is_quote: bool,
     pub(crate) domain: String,
     pub(crate) random_return_command: bool,
     pub(crate) rank_max: u32,

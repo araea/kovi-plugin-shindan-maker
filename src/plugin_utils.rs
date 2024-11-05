@@ -56,7 +56,7 @@ pub(crate) fn parse_command<'a>(text: &'a str, prefixes: &[String]) -> Option<(&
 }
 
 pub(crate) fn build_and_send_message(event: &Arc<AllMsgEvent>, data: &Arc<Data>, msg: &str) {
-    let message = match (data.config.plugin.is_at, data.config.plugin.is_reply) {
+    let message = match (data.config.plugin.is_at, data.config.plugin.is_quote) {
         (true, false) => Message::new()
             .add_at(&event.user_id.to_string())
             .add_text("\n")
@@ -135,7 +135,7 @@ pub(crate) async fn get_member_nickname(bot: &Arc<RuntimeBot>, event: &Arc<AllMs
 }
 
 fn create_prefix_segment(config: &Config, event: &Arc<AllMsgEvent>) -> Option<Segment> {
-    match (config.plugin.is_at, config.plugin.is_reply) {
+    match (config.plugin.is_at, config.plugin.is_quote) {
         (true, _) => Some(Segment {
             type_: "at".to_string(),
             data: json!({ "qq": event.user_id }),
