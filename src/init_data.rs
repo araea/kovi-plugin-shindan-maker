@@ -2,7 +2,7 @@ pub(crate) const CONFIG_TOML: &str = r#"
 # 频道过滤
 [channel]
 # 频道白名单（只允许）
-white = ["123456789", "987654321"]
+white = []
 
 # 频道黑名单（排除）
 black = ["123456789"]
