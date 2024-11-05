@@ -21,7 +21,7 @@ Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+
 ## 配置
 
 * 资源目录 - `data/kovi-plugin-shindan-maker/*`
-    * 第一次运行时自动生成
+    * 第一次运行时自动生成。
 
 ### `config.toml` - 插件配置
 
@@ -73,8 +73,8 @@ commands = ["神断帮助", "bz"]
 
 ### `shindans.toml` - 占卜项
 
-* 添加 - 使用 `添加神断` 指令
-* 删除 - 直接编辑或使用 `删除神断` 指令
+* 添加 - 使用 `添加神断` 指令。
+* 删除 - 直接编辑或使用 `删除神断` 指令。
 
 ## 致谢
 
