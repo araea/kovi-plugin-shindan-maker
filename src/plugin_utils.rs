@@ -287,7 +287,7 @@ pub(crate) async fn process_shindan_command(
             shindan_data
                 .shindan
                 .iter()
-                .find(|s| s.command == command)
+                .find(|s| s.command.as_str() == command)
                 .map_or(Mode::Image, |s| match s.mode.as_str() {
                     "image" => Mode::Image,
                     "text" => Mode::Text,
