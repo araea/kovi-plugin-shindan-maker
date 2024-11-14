@@ -1,12 +1,13 @@
 use std::sync::Arc;
 use anyhow::Result;
+use kovi::tokio::time;
 use kovi::serde_json::json;
 use cdp_html_shot::Browser;
 use rand::prelude::SliceRandom;
 use kovi::bot::message::Segment;
 use shindan_maker::{Segments, ShindanClient};
-use kovi::{AllMsgEvent, Message, RuntimeBot};
-use kovi::tokio::time;
+use kovi::{log, AllMsgEvent, Message, RuntimeBot};
+
 use crate::data::Data;
 use crate::types::{Config, UserData};
 
@@ -180,7 +181,8 @@ pub(crate) async fn process_text_mode(
 ) {
     let segments = match client.get_segments(&shindan.id, name).await {
         Ok(segments) => segments,
-        Err(_) => {
+        Err(err) => {
+            log::error!("[shindan-maker]: Error: {:?}", err);
             build_and_send_message(event, data, SHINDAN_ERROR_MSG);
             return;
         }
@@ -206,7 +208,8 @@ pub(crate) async fn process_image_mode(
 ) {
     let html = match client.get_html_str(&shindan.id, name).await {
         Ok(html) => html,
-        Err(_) => {
+        Err(err) => {
+            log::error!("[shindan-maker]: Error: {:?}", err);
             build_and_send_message(event, data, SHINDAN_ERROR_MSG);
             return;
         }
@@ -227,7 +230,8 @@ pub(crate) async fn process_image_mode(
 
     let base64 = match base64 {
         Ok(base64) => base64,
-        Err(_) => {
+        Err(err) => {
+            log::error!("[shindan-maker]: Error: {:?}", err);
             build_and_send_message(event, data, SHINDAN_ERROR_MSG);
             return;
         }
@@ -394,4 +398,14 @@ pub(crate) async fn update_user_name(event: &Arc<AllMsgEvent>, data: &Arc<Data>)
         .find(|u| u.id.parse::<i64>().unwrap() == event.user_id && u.name != now_name) {
         u.name = now_name.to_string();
     }
+}
+
+
+pub(crate) fn parse_count(data: &Arc<Data>, params: &[&str]) -> u32 {
+    let count = params
+        .first()
+        .and_then(|param| param.parse::<u32>().ok())
+        .unwrap_or(10)
+        .min(data.config.plugin.rank_max);
+    count
 }

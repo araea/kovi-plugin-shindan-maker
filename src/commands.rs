@@ -593,11 +593,7 @@ pub(crate) async fn user_shindan_count_rank(
         return;
     }
 
-    let count = params
-        .first()
-        .and_then(|param| param.parse::<u32>().ok())
-        .unwrap_or(10)
-        .min(data.config.plugin.rank_max);
+    let count = plugin_utils::parse_count(data, params);
 
     let user_data_lock = data.user_data.read().unwrap();
     let mut user_data = user_data_lock.user.clone();
@@ -723,11 +719,7 @@ pub(crate) async fn shindan_count_rank(
         return;
     }
 
-    let count = params
-        .first()
-        .and_then(|param| param.parse::<u32>().ok())
-        .unwrap_or(10)
-        .min(data.config.plugin.rank_max);
+    let count = plugin_utils::parse_count(data, params);
 
     let mut shindan_count = {
         let shindan_lock = data.shindans.read().unwrap();
@@ -799,11 +791,7 @@ pub(crate) async fn fuzzy_search_shindan_command(
 
     let shindan_command = params[0];
 
-    let count = params
-        .first()
-        .and_then(|param| param.parse::<u32>().ok())
-        .unwrap_or(10)
-        .min(data.config.plugin.rank_max);
+    let count = plugin_utils::parse_count(data, params);
 
     let shindan_lock = data.shindans.read().unwrap();
     let shindan = shindan_lock
