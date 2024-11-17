@@ -88,6 +88,7 @@ pub(crate) fn is_numeric(s: &str) -> bool {
 pub(crate) struct ShindanData {
     pub(crate) id: String,
     pub(crate) command: String,
+    pub(crate) mode: String,
 }
 
 #[derive(Debug)]
@@ -280,30 +281,19 @@ pub(crate) async fn process_shindan_command(
         return;
     }
 
-    let mode = {
-        if params.iter().any(|p| *p == "-t") {
-            Mode::Text
-        } else if params.iter().any(|p| *p == "-i") {
-            Mode::Image
-        } else {
-            let shindan_data = data.shindans.read().unwrap();
-
-            shindan_data
-                .shindan
-                .iter()
-                .find(|s| s.command.as_str() == command)
-                .map_or(Mode::Image, |s| match s.mode.as_str() {
-                    "image" => Mode::Image,
-                    "text" => Mode::Text,
-                    _ => Mode::Image,
-                })
-        }
-    };
-
     let filtered_params = filter_mode_params(params);
     let (name, _id) = get_target_name_with_id(bot, event, &filtered_params).await.unwrap();
 
     let shindan_info = get_shindan_info(data, command_type.clone());
+
+    let mode = match params.iter().find(|&&p| p == "-t" || p == "-i") {
+        Some(&"-t") => Mode::Text,
+        Some(&"-i") => Mode::Image,
+        _ => match shindan_info.mode.as_str() {
+            "text" => Mode::Text,
+            _ => Mode::Image,
+        },
+    };
 
     update_statistics(data, event, &name, &shindan_info);
 
@@ -336,6 +326,7 @@ fn get_shindan_info(data: &Arc<Data>, command_type: ShindanCommandType) -> Shind
             ShindanData {
                 id: chosen.id.clone(),
                 command: chosen.command.clone(),
+                mode: chosen.mode.clone(),
             }
         }
         ShindanCommandType::Specific(cmd) => {
@@ -345,6 +336,7 @@ fn get_shindan_info(data: &Arc<Data>, command_type: ShindanCommandType) -> Shind
                 .map(|s| ShindanData {
                     id: s.id.clone(),
                     command: s.command.clone(),
+                    mode: s.mode.clone(),
                 })
                 .unwrap()
         }
@@ -399,7 +391,6 @@ pub(crate) async fn update_user_name(event: &Arc<AllMsgEvent>, data: &Arc<Data>)
         u.name = now_name.to_string();
     }
 }
-
 
 pub(crate) fn parse_count(data: &Arc<Data>, params: &[&str]) -> u32 {
     let count = params
