@@ -252,7 +252,7 @@ async fn capture_html_with_chart(html: &str, browser: &Arc<Browser>) -> Result<S
     Ok(base64)
 }
 
-pub(crate) fn send_command_message(event: &Arc<AllMsgEvent>, data: &Arc<Data>, command: &str) {
+fn send_command_message(event: &Arc<AllMsgEvent>, data: &Arc<Data>, command: &str) {
     let msg = format!("[神断命令]\n{command}");
     build_and_send_message(event, data, &msg);
 }
