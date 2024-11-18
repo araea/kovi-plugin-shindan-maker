@@ -18,6 +18,8 @@ Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+
 3. 参数 `-t` 或 `-i` 可指定模式（文/图）。
 4. 结合 `神断帮助` 与 `-h` 参数自行探索。
 
+* **注意：** 若无法请求神断网，请使用 VPN。
+
 ## 配置
 
 * 资源目录 - `data/kovi-plugin-shindan-maker/*`
