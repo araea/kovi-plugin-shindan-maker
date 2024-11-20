@@ -13,7 +13,7 @@ keywords = ["kovi", "kovi-plugin", "shindan-maker", "fortune-tellings", "diagnos
 kovi = ">= 0.10"
 anyhow = "1.0"
 rand = "0.8.5"
-cdp-html-shot = "0.1"
+cdp-html-shot = { path = "../../../cdp-html-shot", version = "0.1" }
 serde = { version = "1.0", features = ["derive"] }
 shindan-maker = { version = "0.1", features = ["html"] }
 
