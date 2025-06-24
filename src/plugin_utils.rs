@@ -6,7 +6,7 @@ use cdp_html_shot::Browser;
 use rand::prelude::SliceRandom;
 use kovi::bot::message::Segment;
 use shindan_maker::{Segments, ShindanClient};
-use kovi::{log, AllMsgEvent, Message, RuntimeBot};
+use kovi::{log, MsgEvent, Message, RuntimeBot};
 
 use crate::data::Data;
 use crate::types::{Config, UserData};
@@ -56,7 +56,7 @@ pub(crate) fn parse_command<'a>(text: &'a str, prefixes: &[String]) -> Option<(&
     }
 }
 
-pub(crate) fn build_and_send_message(event: &Arc<AllMsgEvent>, data: &Arc<Data>, msg: &str) {
+pub(crate) fn build_and_send_message(event: &Arc<MsgEvent>, data: &Arc<Data>, msg: &str) {
     let message = match (data.config.plugin.is_at, data.config.plugin.is_quote) {
         (true, false) => Message::new()
             .add_at(&event.user_id.to_string())
@@ -97,7 +97,7 @@ pub(crate) enum Mode {
     Image,
 }
 
-pub(crate) async fn get_target_name_with_id(bot: &Arc<RuntimeBot>, event: &Arc<AllMsgEvent>, params: &[&str]) -> Result<(String, String)> {
+pub(crate) async fn get_target_name_with_id(bot: &Arc<RuntimeBot>, event: &Arc<MsgEvent>, params: &[&str]) -> Result<(String, String)> {
     let msg_segments = &event.message;
     match (
         msg_segments.get_from_index(0),
@@ -124,7 +124,7 @@ pub(crate) async fn get_target_name_with_id(bot: &Arc<RuntimeBot>, event: &Arc<A
     }
 }
 
-pub(crate) async fn get_member_nickname(bot: &Arc<RuntimeBot>, event: &Arc<AllMsgEvent>, user_id: &str) -> Result<String> {
+pub(crate) async fn get_member_nickname(bot: &Arc<RuntimeBot>, event: &Arc<MsgEvent>, user_id: &str) -> Result<String> {
     let group_id = event.group_id.ok_or_else(|| anyhow::anyhow!("No group id"))?;
     let member_info = bot
         .get_group_member_info(group_id, user_id.parse()?, true)
@@ -136,7 +136,7 @@ pub(crate) async fn get_member_nickname(bot: &Arc<RuntimeBot>, event: &Arc<AllMs
         .to_string())
 }
 
-fn create_prefix_segment(config: &Config, event: &Arc<AllMsgEvent>) -> Option<Segment> {
+fn create_prefix_segment(config: &Config, event: &Arc<MsgEvent>) -> Option<Segment> {
     match (config.plugin.is_at, config.plugin.is_quote) {
         (true, _) => Some(Segment {
             type_: "at".to_string(),
@@ -173,7 +173,7 @@ fn create_message(segments: &Segments, prefix: Option<Segment>) -> Message {
 }
 
 pub(crate) async fn process_text_mode(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     shindan: &ShindanData,
@@ -200,7 +200,7 @@ pub(crate) async fn process_text_mode(
 }
 
 pub(crate) async fn process_image_mode(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     shindan: &ShindanData,
@@ -252,7 +252,7 @@ async fn capture_html_with_chart(html: &str, browser: &Arc<Browser>) -> Result<S
     Ok(base64)
 }
 
-fn send_command_message(event: &Arc<AllMsgEvent>, data: &Arc<Data>, command: &str) {
+fn send_command_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
     let msg = format!("[神断命令]\n{command}");
     build_and_send_message(event, data, &msg);
 }
@@ -269,7 +269,7 @@ pub enum ShindanCommandType {
 
 pub(crate) async fn process_shindan_command(
     bot: &Arc<RuntimeBot>,
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     params: &[&str],
@@ -302,7 +302,7 @@ pub(crate) async fn process_shindan_command(
     process_shindan_result(event, data, client, &shindan_info, &name, mode, is_random).await;
 }
 
-fn show_help_message(event: &Arc<AllMsgEvent>, data: &Arc<Data>, command: &str) {
+fn show_help_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
     let help_msg = format!(
         "[指令]\n{command}\n\n[功能]\n神断命令\n\n[参数]\n\n1. 名字（可选）\n2. 模式 -t / -i（可选）\n\n[示例]\n\n1. {command}\n2. {command} 九条可憐\n3. {command} 九条可憐 -t\n4. {command} 九条可憐 -i\n5. {command} @九条可憐"
     );
@@ -343,7 +343,7 @@ fn get_shindan_info(data: &Arc<Data>, command_type: ShindanCommandType) -> Shind
     }
 }
 
-fn update_statistics(data: &Arc<Data>, event: &Arc<AllMsgEvent>, name: &str, shindan_info: &ShindanData) {
+fn update_statistics(data: &Arc<Data>, event: &Arc<MsgEvent>, name: &str, shindan_info: &ShindanData) {
     {
         let mut user_data = data.user_data.write().unwrap();
         match user_data.user.iter_mut().find(|u| u.id.parse::<i64>().unwrap() == event.user_id) {
@@ -365,7 +365,7 @@ fn update_statistics(data: &Arc<Data>, event: &Arc<AllMsgEvent>, name: &str, shi
 }
 
 async fn process_shindan_result(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     shindan_info: &ShindanData,
@@ -383,7 +383,7 @@ async fn process_shindan_result(
     }
 }
 
-pub(crate) async fn update_user_name(event: &Arc<AllMsgEvent>, data: &Arc<Data>) {
+pub(crate) async fn update_user_name(event: &Arc<MsgEvent>, data: &Arc<Data>) {
     let now_name = event.get_sender_nickname();
     let mut user_data = data.user_data.write().unwrap();
     if let Some(u) = user_data.user.iter_mut()

@@ -2,7 +2,6 @@ use kovi::utils;
 use std::sync::RwLock;
 use std::path::PathBuf;
 use kovi::{toml, PluginBuilder};
-use kovi::bot::runtimebot::kovi_api::KoviApi;
 
 use crate::types::{Commands, Config, Shindan, Shindans, UserDatas};
 use crate::init_data::{COMMANDS_TOML, CONFIG_TOML, SHINDANS_TOML, USER_DATA_TOML};

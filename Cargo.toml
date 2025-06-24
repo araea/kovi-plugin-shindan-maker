@@ -1,7 +1,7 @@
 [package]
 name = "kovi-plugin-shindan-maker"
 version = "0.1.6"
-edition = "2021"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["Nawyjx <3373167460@qq.com>"]
 description = "Kovi 的 ShindanMaker 占卜插件。"

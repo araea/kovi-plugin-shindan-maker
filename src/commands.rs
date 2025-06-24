@@ -3,12 +3,12 @@ use crate::plugin_utils;
 use crate::plugin_utils::ShindanCommandType;
 use kovi::bot::message::Segment;
 use kovi::serde_json::json;
-use kovi::{AllMsgEvent, Message, RuntimeBot};
+use kovi::{MsgEvent, Message, RuntimeBot};
 use shindan_maker::ShindanClient;
 use std::cmp;
 use std::sync::Arc;
 
-pub(crate) fn plugin_commands(event: &Arc<AllMsgEvent>, data: &Arc<Data>) {
+pub(crate) fn plugin_commands(event: &Arc<MsgEvent>, data: &Arc<Data>) {
     let commands = &data
         .commands
         .command
@@ -43,7 +43,7 @@ pub(crate) fn plugin_commands(event: &Arc<AllMsgEvent>, data: &Arc<Data>) {
 }
 
 pub(crate) async fn add_shindan_command(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     params: &[&str],
@@ -187,7 +187,7 @@ ID：{id}
 }
 
 pub(crate) async fn delete_shindan_command(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -261,7 +261,7 @@ ID：{id}
 
 pub(crate) async fn random_shindan_command(
     bot: &Arc<RuntimeBot>,
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     params: &[&str],
@@ -281,7 +281,7 @@ pub(crate) async fn random_shindan_command(
 
 pub(crate) async fn specific_shindan_command(
     bot: &Arc<RuntimeBot>,
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     client: &Arc<ShindanClient>,
     params: &[&str],
@@ -299,7 +299,7 @@ pub(crate) async fn specific_shindan_command(
     .await;
 }
 
-pub(crate) async fn shindan_command_list(event: &Arc<AllMsgEvent>, data: &Arc<Data>) {
+pub(crate) async fn shindan_command_list(event: &Arc<MsgEvent>, data: &Arc<Data>) {
     const PAGE_SIZE: usize = 100;
 
     let shindans = data.shindans.read().unwrap();
@@ -341,7 +341,7 @@ pub(crate) async fn shindan_command_list(event: &Arc<AllMsgEvent>, data: &Arc<Da
 }
 
 pub(crate) async fn set_shindan_mode(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -432,7 +432,7 @@ ID：{id}
 }
 
 pub(crate) async fn modify_shindan_command(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -514,7 +514,7 @@ ID：{id}
 
 pub(crate) async fn view_user_shindan_count(
     bot: &Arc<RuntimeBot>,
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -566,7 +566,7 @@ pub(crate) async fn view_user_shindan_count(
 }
 
 pub(crate) async fn user_shindan_count_rank(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -629,7 +629,7 @@ pub(crate) async fn user_shindan_count_rank(
 }
 
 pub(crate) async fn view_shindan_info(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -692,7 +692,7 @@ ID：{id}
 }
 
 pub(crate) async fn shindan_count_rank(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,
@@ -762,7 +762,7 @@ pub(crate) async fn shindan_count_rank(
 }
 
 pub(crate) async fn fuzzy_search_shindan_command(
-    event: &Arc<AllMsgEvent>,
+    event: &Arc<MsgEvent>,
     data: &Arc<Data>,
     params: &[&str],
     command: &str,

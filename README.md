@@ -23,7 +23,7 @@ Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+
 ## 配置
 
 * 资源目录 - `data/kovi-plugin-shindan-maker/*`
-    * 第一次运行时自动生成。
+  * 第一次运行时自动生成。
 
 ### `config.toml` - 插件配置
 
@@ -99,4 +99,3 @@ Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
 be dual licensed as above, without any additional terms or conditions.
 </sub>
-
