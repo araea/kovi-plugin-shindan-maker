@@ -1,15 +1,15 @@
 #![doc = include_str!("../README.md")]
 
-mod data;
-mod types;
 mod commands;
+mod data;
 mod init_data;
 mod plugin_utils;
+mod types;
 
-use std::sync::Arc;
-use kovi::PluginBuilder;
 use cdp_html_shot::Browser;
+use kovi::PluginBuilder;
 use shindan_maker::ShindanClient;
+use std::sync::Arc;
 
 use crate::data::Data;
 
@@ -35,7 +35,10 @@ async fn main() {
                 if data.config.plugin.only_at {
                     let message = &event.message;
                     let segment = message.get_from_index(0).unwrap();
-                    if segment.type_ != "at" || segment.data["qq"].as_str().unwrap().parse::<i64>().unwrap() != event.self_id {
+                    if segment.type_ != "at"
+                        || segment.data["qq"].as_str().unwrap().parse::<i64>().unwrap()
+                            != event.self_id
+                    {
                         return;
                     }
                 }
@@ -56,7 +59,9 @@ async fn main() {
                 }
 
                 // 指令解析
-                if let Some((cmd, params)) = plugin_utils::parse_command(text, &data.config.plugin.prefixes) {
+                if let Some((cmd, params)) =
+                    plugin_utils::parse_command(text, &data.config.plugin.prefixes)
+                {
                     // 更新用户名
                     plugin_utils::update_user_name(&event, &data).await;
 
@@ -65,24 +70,62 @@ async fn main() {
                         let function = command.function.as_str();
                         match function {
                             "插件指令列表" => commands::plugin_commands(&event, &data),
-                            "添加神断命令" => commands::add_shindan_command(&event, &data, &client, &params, cmd).await,
-                            "删除神断命令" => commands::delete_shindan_command(&event, &data, &params, cmd).await,
-                            "随机神断命令" => commands::random_shindan_command(&bot, &event, &data, &client, &params, cmd).await,
-                            "神断命令列表" => commands::shindan_command_list(&event, &data).await,
-                            "设置神断模式" => commands::set_shindan_mode(&event, &data, &params, cmd).await,
-                            "修改神断命令" => commands::modify_shindan_command(&event, &data, &params, cmd).await,
-                            "查看用户神断次数" => commands::view_user_shindan_count(&bot, &event, &data, &params, cmd).await,
-                            "用户神断次数排行榜" => commands::user_shindan_count_rank(&event, &data, &params, cmd).await,
-                            "查看神断信息" => commands::view_shindan_info(&event, &data, &params, cmd).await,
-                            "神断被触发次数排行榜" => commands::shindan_count_rank(&event, &data, &params, cmd).await,
-                            "模糊查找神断命令" => commands::fuzzy_search_shindan_command(&event, &data, &params, cmd).await,
+                            "添加神断命令" => {
+                                commands::add_shindan_command(&event, &data, &client, &params, cmd)
+                                    .await
+                            }
+                            "删除神断命令" => {
+                                commands::delete_shindan_command(&event, &data, &params, cmd).await
+                            }
+                            "随机神断命令" => {
+                                commands::random_shindan_command(
+                                    &bot, &event, &data, &client, &params, cmd,
+                                )
+                                .await
+                            }
+                            "神断命令列表" => {
+                                commands::shindan_command_list(&event, &data).await
+                            }
+                            "设置神断模式" => {
+                                commands::set_shindan_mode(&event, &data, &params, cmd).await
+                            }
+                            "修改神断命令" => {
+                                commands::modify_shindan_command(&event, &data, &params, cmd).await
+                            }
+                            "查看用户神断次数" => {
+                                commands::view_user_shindan_count(&bot, &event, &data, &params, cmd)
+                                    .await
+                            }
+                            "用户神断次数排行榜" => {
+                                commands::user_shindan_count_rank(&event, &data, &params, cmd).await
+                            }
+                            "查看神断信息" => {
+                                commands::view_shindan_info(&event, &data, &params, cmd).await
+                            }
+                            "神断被触发次数排行榜" => {
+                                commands::shindan_count_rank(&event, &data, &params, cmd).await
+                            }
+                            "模糊查找神断命令" => {
+                                commands::fuzzy_search_shindan_command(&event, &data, &params, cmd)
+                                    .await
+                            }
                             _ => {}
                         }
                     }
 
                     // 神断命令
-                    if data.shindans.read().unwrap().shindan.iter().any(|s| s.command == cmd) {
-                        commands::specific_shindan_command(&bot, &event, &data, &client, &params, cmd).await;
+                    if data
+                        .shindans
+                        .read()
+                        .unwrap()
+                        .shindan
+                        .iter()
+                        .any(|s| s.command == cmd)
+                    {
+                        commands::specific_shindan_command(
+                            &bot, &event, &data, &client, &params, cmd,
+                        )
+                        .await;
                     }
                 }
             }
@@ -101,8 +144,5 @@ async fn main() {
                 data.save();
             }
         }
-    }
-    );
+    });
 }
-
-
