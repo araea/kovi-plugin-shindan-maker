@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use anyhow::Result;
-use kovi::tokio::time;
-use kovi::serde_json::json;
 use cdp_html_shot::Browser;
-use rand::prelude::SliceRandom;
 use kovi::bot::message::Segment;
+use kovi::serde_json::json;
+use kovi::tokio::time;
+use kovi::{Message, MsgEvent, RuntimeBot, log};
+use rand::prelude::SliceRandom;
 use shindan_maker::{Segments, ShindanClient};
-use kovi::{log, MsgEvent, Message, RuntimeBot};
+use std::sync::Arc;
 
 use crate::data::Data;
 use crate::types::{Config, UserData};
@@ -20,7 +20,7 @@ pub(crate) fn should_process_group(
 ) -> bool {
     let group_id = match group_id {
         Some(id) => id.to_string(),
-        None => return true
+        None => return true,
     };
 
     if black_list.contains(&group_id) {
@@ -34,7 +34,10 @@ pub(crate) fn should_process_group(
     true
 }
 
-pub(crate) fn parse_command<'a>(text: &'a str, prefixes: &[String]) -> Option<(&'a str, Vec<&'a str>)> {
+pub(crate) fn parse_command<'a>(
+    text: &'a str,
+    prefixes: &[String],
+) -> Option<(&'a str, Vec<&'a str>)> {
     let mut words: Vec<&str> = text.split_whitespace().collect();
     if words.is_empty() {
         return None;
@@ -48,7 +51,8 @@ pub(crate) fn parse_command<'a>(text: &'a str, prefixes: &[String]) -> Option<(&
         let mut sorted_prefixes = prefixes.to_vec();
         sorted_prefixes.sort_by_key(|b| std::cmp::Reverse(b.len()));
 
-        command = sorted_prefixes.iter()
+        command = sorted_prefixes
+            .iter()
             .find(|&p| command.starts_with(p))
             .map(|p| &command[p.len()..])?;
 
@@ -62,16 +66,13 @@ pub(crate) fn build_and_send_message(event: &Arc<MsgEvent>, data: &Arc<Data>, ms
             .add_at(&event.user_id.to_string())
             .add_text("\n")
             .add_text(msg),
-        (false, true) => Message::new()
-            .add_reply(event.message_id)
-            .add_text(msg),
+        (false, true) => Message::new().add_reply(event.message_id).add_text(msg),
         (true, true) => Message::new()
             .add_reply(event.message_id)
             .add_at(&event.user_id.to_string())
             .add_text("\n")
             .add_text(msg),
-        (false, false) => Message::new()
-            .add_text(msg),
+        (false, false) => Message::new().add_text(msg),
     };
 
     event.reply(message);
@@ -97,7 +98,11 @@ pub(crate) enum Mode {
     Image,
 }
 
-pub(crate) async fn get_target_name_with_id(bot: &Arc<RuntimeBot>, event: &Arc<MsgEvent>, params: &[&str]) -> Result<(String, String)> {
+pub(crate) async fn get_target_name_with_id(
+    bot: &Arc<RuntimeBot>,
+    event: &Arc<MsgEvent>,
+    params: &[&str],
+) -> Result<(String, String)> {
     let msg_segments = &event.message;
     match (
         msg_segments.get_from_index(0),
@@ -115,20 +120,30 @@ pub(crate) async fn get_target_name_with_id(bot: &Arc<RuntimeBot>, event: &Arc<M
             Ok((name, id.to_string()))
         }
         _ => {
-            if params.first().is_some() {
+            if !params.is_empty() {
                 Ok((params.join(" "), "".to_string()))
             } else {
-                Ok((event.get_sender_nickname().to_string(), event.user_id.to_string()))
+                Ok((
+                    event.get_sender_nickname().to_string(),
+                    event.user_id.to_string(),
+                ))
             }
         }
     }
 }
 
-pub(crate) async fn get_member_nickname(bot: &Arc<RuntimeBot>, event: &Arc<MsgEvent>, user_id: &str) -> Result<String> {
-    let group_id = event.group_id.ok_or_else(|| anyhow::anyhow!("No group id"))?;
+pub(crate) async fn get_member_nickname(
+    bot: &Arc<RuntimeBot>,
+    event: &Arc<MsgEvent>,
+    user_id: &str,
+) -> Result<String> {
+    let group_id = event
+        .group_id
+        .ok_or_else(|| anyhow::anyhow!("No group id"))?;
     let member_info = bot
         .get_group_member_info(group_id, user_id.parse()?, true)
-        .await.unwrap();
+        .await
+        .unwrap();
 
     Ok(member_info.data["nickname"]
         .as_str()
@@ -166,7 +181,7 @@ fn create_message(segments: &Segments, prefix: Option<Segment>) -> Message {
         segments
             .0
             .iter()
-            .map(|segment| Segment::new(&segment.type_, segment.data.clone()))
+            .map(|segment| Segment::new(&segment.type_, segment.data.clone())),
     );
 
     Message::from(result)
@@ -282,7 +297,9 @@ pub(crate) async fn process_shindan_command(
     }
 
     let filtered_params = filter_mode_params(params);
-    let (name, _id) = get_target_name_with_id(bot, event, &filtered_params).await.unwrap();
+    let (name, _id) = get_target_name_with_id(bot, event, &filtered_params)
+        .await
+        .unwrap();
 
     let shindan_info = get_shindan_info(data, command_type.clone());
 
@@ -310,7 +327,8 @@ fn show_help_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
 }
 
 fn filter_mode_params<'a>(params: &'a [&str]) -> Vec<&'a str> {
-    params.iter()
+    params
+        .iter()
         .filter(|&&p| p != "-t" && p != "-i")
         .copied()
         .collect()
@@ -320,33 +338,39 @@ fn get_shindan_info(data: &Arc<Data>, command_type: ShindanCommandType) -> Shind
     let guard = data.shindans.read().unwrap();
     match command_type {
         ShindanCommandType::Random => {
-            let chosen = guard.shindan
-                .choose(&mut rand::thread_rng())
-                .unwrap();
+            let chosen = guard.shindan.choose(&mut rand::thread_rng()).unwrap();
             ShindanData {
                 id: chosen.id.clone(),
                 command: chosen.command.clone(),
                 mode: chosen.mode.clone(),
             }
         }
-        ShindanCommandType::Specific(cmd) => {
-            guard.shindan
-                .iter()
-                .find(|s| s.command == cmd)
-                .map(|s| ShindanData {
-                    id: s.id.clone(),
-                    command: s.command.clone(),
-                    mode: s.mode.clone(),
-                })
-                .unwrap()
-        }
+        ShindanCommandType::Specific(cmd) => guard
+            .shindan
+            .iter()
+            .find(|s| s.command == cmd)
+            .map(|s| ShindanData {
+                id: s.id.clone(),
+                command: s.command.clone(),
+                mode: s.mode.clone(),
+            })
+            .unwrap(),
     }
 }
 
-fn update_statistics(data: &Arc<Data>, event: &Arc<MsgEvent>, name: &str, shindan_info: &ShindanData) {
+fn update_statistics(
+    data: &Arc<Data>,
+    event: &Arc<MsgEvent>,
+    name: &str,
+    shindan_info: &ShindanData,
+) {
     {
         let mut user_data = data.user_data.write().unwrap();
-        match user_data.user.iter_mut().find(|u| u.id.parse::<i64>().unwrap() == event.user_id) {
+        match user_data
+            .user
+            .iter_mut()
+            .find(|u| u.id.parse::<i64>().unwrap() == event.user_id)
+        {
             Some(user) => user.count += 1,
             None => user_data.user.push(UserData {
                 id: event.user_id.clone().to_string(),
@@ -374,29 +398,27 @@ async fn process_shindan_result(
     is_random: bool,
 ) {
     match mode {
-        Mode::Text => {
-            process_text_mode(event, data, client, shindan_info, name, is_random).await
-        }
-        Mode::Image => {
-            process_image_mode(event, data, client, shindan_info, name, is_random).await
-        }
+        Mode::Text => process_text_mode(event, data, client, shindan_info, name, is_random).await,
+        Mode::Image => process_image_mode(event, data, client, shindan_info, name, is_random).await,
     }
 }
 
 pub(crate) async fn update_user_name(event: &Arc<MsgEvent>, data: &Arc<Data>) {
     let now_name = event.get_sender_nickname();
     let mut user_data = data.user_data.write().unwrap();
-    if let Some(u) = user_data.user.iter_mut()
-        .find(|u| u.id.parse::<i64>().unwrap() == event.user_id && u.name != now_name) {
+    if let Some(u) = user_data
+        .user
+        .iter_mut()
+        .find(|u| u.id.parse::<i64>().unwrap() == event.user_id && u.name != now_name)
+    {
         u.name = now_name.to_string();
     }
 }
 
 pub(crate) fn parse_count(data: &Arc<Data>, params: &[&str]) -> u32 {
-    let count = params
+    params
         .first()
         .and_then(|param| param.parse::<u32>().ok())
         .unwrap_or(10)
-        .min(data.config.plugin.rank_max);
-    count
+        .min(data.config.plugin.rank_max)
 }

@@ -3,7 +3,7 @@ use crate::plugin_utils;
 use crate::plugin_utils::ShindanCommandType;
 use kovi::bot::message::Segment;
 use kovi::serde_json::json;
-use kovi::{MsgEvent, Message, RuntimeBot};
+use kovi::{Message, MsgEvent, RuntimeBot};
 use shindan_maker::ShindanClient;
 use std::cmp;
 use std::sync::Arc;
@@ -307,7 +307,7 @@ pub(crate) async fn shindan_command_list(event: &Arc<MsgEvent>, data: &Arc<Data>
     let commands: Vec<String> = shindans.shindan.iter().map(|s| s.command.clone()).collect();
 
     let total_commands = commands.len();
-    let total_pages = (total_commands + PAGE_SIZE - 1) / PAGE_SIZE;
+    let total_pages = total_commands.div_ceil(PAGE_SIZE);
 
     if total_commands == 0 {
         let msg = "获取失败！\n\n[原因]\n无神断命令".to_string();

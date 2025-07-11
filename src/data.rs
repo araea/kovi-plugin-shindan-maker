@@ -1,10 +1,10 @@
 use kovi::utils;
-use std::sync::RwLock;
+use kovi::{PluginBuilder, toml};
 use std::path::PathBuf;
-use kovi::{toml, PluginBuilder};
+use std::sync::RwLock;
 
-use crate::types::{Commands, Config, Shindan, Shindans, UserDatas};
 use crate::init_data::{COMMANDS_TOML, CONFIG_TOML, SHINDANS_TOML, USER_DATA_TOML};
+use crate::types::{Commands, Config, Shindan, Shindans, UserDatas};
 
 #[derive(Debug)]
 pub(crate) struct Data {
@@ -51,7 +51,9 @@ impl Data {
         let shindans_path = data_path.join("shindans.toml");
 
         let mut shindans_data = self.shindans.write().unwrap();
-        shindans_data.shindan.sort_by(|a, b| a.command.cmp(&b.command));
+        shindans_data
+            .shindan
+            .sort_by(|a, b| a.command.cmp(&b.command));
         let shindans_data: &Shindans = &shindans_data;
         utils::save_toml_data(shindans_data, shindans_path).unwrap();
 
@@ -60,7 +62,14 @@ impl Data {
         utils::save_toml_data(user_data_data, user_data_path).unwrap();
     }
 
-    pub(crate) fn add_shindan(&self, id: &str, title: &str, description: &str, command: &str, mode: &str) {
+    pub(crate) fn add_shindan(
+        &self,
+        id: &str,
+        title: &str,
+        description: &str,
+        command: &str,
+        mode: &str,
+    ) {
         let shindan = Shindan {
             id: id.to_string(),
             title: title.to_string(),
