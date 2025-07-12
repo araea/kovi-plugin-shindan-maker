@@ -9,34 +9,34 @@ use std::cmp;
 use std::sync::Arc;
 
 pub(crate) fn plugin_commands(event: &Arc<MsgEvent>, data: &Arc<Data>) {
-    let commands = &data
+    let commands: String = data
         .commands
         .command
         .iter()
         .enumerate()
-        .map(|(index, command)| format!("{}. {}", index + 1, command.commands.join(" / ")))
-        .collect::<Vec<String>>()
+        .map(|(i, cmd)| format!("{:>2}. {}", i + 1, cmd.commands.join(" / ")))
+        .collect::<Vec<_>>()
         .join("\n");
 
-    let mut str = String::new();
-    let prefixes_str = data.config.plugin.prefixes.join("\n");
-    if !prefixes_str.is_empty() {
-        str = format!("\n\n[指令.前缀]\n{prefixes_str}");
-    }
+    let prefix_str = if !data.config.plugin.prefixes.is_empty() {
+        format!("\n\n[指令.前缀]\n{}", data.config.plugin.prefixes.join("\n"))
+    } else {
+        String::new()
+    };
 
+    let example_cmd = &data.commands.command[1].commands[0];
     let msg = format!(
         "[指令]
 
-{commands}{str}
+{commands}{prefix_str}
 
 [帮助]
--h / --help 查看帮助
+-h   /   --help   查看帮助
 
 [帮助.示例]
 
-1. {0} -h
-2. {0} --help",
-        &data.commands.command[1].commands[0]
+1. {example_cmd} -h
+2. {example_cmd} --help"
     );
 
     plugin_utils::build_and_send_message(event, data, &msg);

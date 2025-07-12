@@ -64,13 +64,13 @@ pub(crate) fn build_and_send_message(event: &Arc<MsgEvent>, data: &Arc<Data>, ms
     let message = match (data.config.plugin.is_at, data.config.plugin.is_quote) {
         (true, false) => Message::new()
             .add_at(&event.user_id.to_string())
-            .add_text("\n")
+            .add_text("\n\n")
             .add_text(msg),
         (false, true) => Message::new().add_reply(event.message_id).add_text(msg),
         (true, true) => Message::new()
             .add_reply(event.message_id)
             .add_at(&event.user_id.to_string())
-            .add_text("\n")
+            .add_text("\n\n")
             .add_text(msg),
         (false, false) => Message::new().add_text(msg),
     };
