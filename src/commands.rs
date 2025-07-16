@@ -19,14 +19,18 @@ pub(crate) fn plugin_commands(event: &Arc<MsgEvent>, data: &Arc<Data>) {
         .join("\n");
 
     let prefix_str = if !data.config.plugin.prefixes.is_empty() {
-        format!("\n\n[指令.前缀]\n{}", data.config.plugin.prefixes.join("\n"))
+        format!(
+            "\n\n[指令.前缀]\n{}",
+            data.config.plugin.prefixes.join("\n")
+        )
     } else {
         String::new()
     };
 
     let example_cmd = &data.commands.command[1].commands[0];
     let msg = format!(
-        "[指令]
+        "\
+[指令]
 
 {commands}{prefix_str}
 
