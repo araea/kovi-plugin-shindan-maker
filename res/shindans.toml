@@ -1,96 +1,3 @@
-pub(crate) const CONFIG_TOML: &str = r#"
-# 频道过滤
-[channel]
-# 频道白名单（只允许）
-white = []
-
-# 频道黑名单（排除）
-black = ["123456789"]
-
-# 插件配置
-[plugin]
-# 仅 @ 响应
-only_at = false
-
-# 指令前缀
-# 示例：["!", "。"]
-prefixes = []
-
-# 回复时 @
-is_at = true
-
-# 回复时引用
-is_quote = false
-
-# 神断网区域
-# 可选："Jp", "En", "Cn", "Kr", "Th"
-domain = "Cn"
-
-# `随机神断` 时提示命令
-random_return_command = true
-
-# 排行榜最多显示
-rank_max = 30
-"#;
-
-pub(crate) const COMMANDS_TOML: &str = r#"
-[[command]]
-function = "插件指令列表"
-commands = ["神断帮助"]
-
-[[command]]
-function = "添加神断命令"
-commands = ["添加神断"]
-
-[[command]]
-function = "删除神断命令"
-commands = ["删除神断"]
-
-[[command]]
-function = "随机神断命令"
-commands = ["随机神断"]
-
-[[command]]
-function = "神断命令列表"
-commands = ["神断列表"]
-
-[[command]]
-function = "设置神断模式"
-commands = ["设置神断"]
-
-[[command]]
-function = "修改神断命令"
-commands = ["修改神断"]
-
-[[command]]
-function = "查看用户神断次数"
-commands = ["用户次数"]
-
-[[command]]
-function = "用户神断次数排行榜"
-commands = ["用户排行榜"]
-
-[[command]]
-function = "查看神断信息"
-commands = ["查看神断"]
-
-[[command]]
-function = "神断被触发次数排行榜"
-commands = ["神断次数"]
-
-[[command]]
-function = "模糊查找神断命令"
-commands = ["查找神断"]
-"#;
-
-pub(crate) const USER_DATA_TOML: &str = r#"
-[[user]]
-id = "123456"
-name = "神秘人"
-count = 0
-"#;
-
-pub(crate) const SHINDANS_TOML: &str = r###"
 [[shindan]]
 id = "1116350"
 title = "占卜你的○○度2"
@@ -881,14 +788,14 @@ count = 0
 [[shindan]]
 id = "1153293"
 title = "oc生成器/oc creator"
-description = '''
+description = """
 !!! There are non-human skin colors !!!
 Any skin color with "（异色皮）" is non-human
 包含发色、瞳色、其他外貌特征、喜欢的、讨厌的、身高、肤色、星座
 For the English version pls go to ID:1153609
 
 2023/1/19 更新了，加了肤色和其他词语
-2023/3/28 更新了，加了性格关键词'''
+2023/3/28 更新了，加了性格关键词"""
 command = "OC生成5"
 mode = "image"
 count = 0
@@ -3273,7 +3180,7 @@ title = "你的爱是怎样的？"
 description = "心中美好与岁月遗憾"
 command = "我的爱"
 mode = "image"
-count = 0
+count = 1
 
 [[shindan]]
 id = "1070601"
@@ -4296,7 +4203,7 @@ description = """
 最后更新2023.4.10"""
 command = "武装JK"
 mode = "image"
-count = 0
+count = 1
 
 [[shindan]]
 id = "1135663"
@@ -5897,7 +5804,7 @@ count = 0
 [[shindan]]
 id = "1127812"
 title = "【吃饭模拟器】随机生成（1.0）"
-description = '''
+description = """
 来代餐吧！！！
 
 出于已被冻结的骰娘「Leibot_0401」。
@@ -5906,7 +5813,7 @@ description = '''
 
 可以改动！可以当OC！欢迎加群分享！
 【作者OC唠嗑QQ群：731638039】
-【版本：1.0】'''
+【版本：1.0】"""
 command = "随机生成"
 mode = "image"
 count = 0
@@ -6362,4 +6269,3 @@ description = """
 command = "龙与地下城"
 mode = "image"
 count = 0
-"###;
