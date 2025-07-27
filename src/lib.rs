@@ -180,7 +180,7 @@ count = 0
 // --- START OF MODULE: data ---
 mod data {
     use kovi::utils;
-    use kovi::{toml, PluginBuilder};
+    use kovi::{PluginBuilder, toml};
     use std::path::PathBuf;
     use std::sync::RwLock;
 
@@ -274,7 +274,7 @@ mod plugin_utils {
     use kovi::bot::message::Segment;
     use kovi::serde_json::json;
     use kovi::tokio::time;
-    use kovi::{log, Message, MsgEvent, RuntimeBot};
+    use kovi::{Message, MsgEvent, RuntimeBot, log};
     use rand::prelude::SliceRandom;
     use shindan_maker::{Segments, ShindanClient};
     use std::sync::Arc;
@@ -469,7 +469,7 @@ mod plugin_utils {
         let segments = match client.get_segments(&shindan.id, name).await {
             Ok(segments) => segments,
             Err(err) => {
-                log::error!("[shindan-maker]: Error: {:?}", err);
+                log::error!("[shindan-maker]: Error: {err:?}");
                 build_and_send_message(event, data, SHINDAN_ERROR_MSG);
                 return;
             }
@@ -496,7 +496,7 @@ mod plugin_utils {
         let html = match client.get_html_str(&shindan.id, name).await {
             Ok(html) => html,
             Err(err) => {
-                log::error!("[shindan-maker]: Error: {:?}", err);
+                log::error!("[shindan-maker]: Error: {err:?}");
                 build_and_send_message(event, data, SHINDAN_ERROR_MSG);
                 return;
             }
@@ -518,13 +518,13 @@ mod plugin_utils {
         let base64 = match base64 {
             Ok(base64) => base64,
             Err(err) => {
-                log::error!("[shindan-maker]: Error: {:?}", err);
+                log::error!("[shindan-maker]: Error: {err:?}");
                 build_and_send_message(event, data, SHINDAN_ERROR_MSG);
                 return;
             }
         };
 
-        let msg = Message::new().add_image(&format!("base64://{}", base64));
+        let msg = Message::new().add_image(&format!("base64://{base64}"));
         event.reply(msg);
     }
 
@@ -598,16 +598,7 @@ mod plugin_utils {
 
         let is_random = matches!(command_type, ShindanCommandType::Random);
 
-        process_shindan_result(
-            event,
-            data,
-            client,
-            &shindan_info,
-            &name,
-            mode,
-            is_random,
-        )
-        .await;
+        process_shindan_result(event, data, client, &shindan_info, &name, mode, is_random).await;
     }
 
     fn show_help_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
@@ -625,17 +616,19 @@ mod plugin_utils {
             .collect()
     }
 
-    fn get_shindan_info(
-        data: &Arc<Data>,
-        command_type: ShindanCommandType,
-    ) -> Option<ShindanData> {
+    fn get_shindan_info(data: &Arc<Data>, command_type: ShindanCommandType) -> Option<ShindanData> {
         let guard = data.shindans.read().unwrap();
         match command_type {
-            ShindanCommandType::Random => guard.shindan.choose(&mut rand::thread_rng()).map(|s| ShindanData {
-                id: s.id.clone(),
-                command: s.command.clone(),
-                mode: s.mode.clone(),
-            }),
+            ShindanCommandType::Random => {
+                guard
+                    .shindan
+                    .choose(&mut rand::thread_rng())
+                    .map(|s| ShindanData {
+                        id: s.id.clone(),
+                        command: s.command.clone(),
+                        mode: s.mode.clone(),
+                    })
+            }
             ShindanCommandType::Specific(cmd) => guard
                 .shindan
                 .iter()
@@ -672,11 +665,7 @@ mod plugin_utils {
 
         {
             let mut shindan = data.shindans.write().unwrap();
-            if let Some(s) = shindan
-                .shindan
-                .iter_mut()
-                .find(|s| s.id == shindan_info.id)
-            {
+            if let Some(s) = shindan.shindan.iter_mut().find(|s| s.id == shindan_info.id) {
                 s.count += 1;
             }
         }
@@ -1037,11 +1026,7 @@ ID：{id}
 
         let shindans = data.shindans.read().unwrap();
 
-        let commands: Vec<String> = shindans
-            .shindan
-            .iter()
-            .map(|s| s.command.clone())
-            .collect();
+        let commands: Vec<String> = shindans.shindan.iter().map(|s| s.command.clone()).collect();
 
         let total_commands = commands.len();
         let total_pages = total_commands.div_ceil(PAGE_SIZE);
@@ -1296,7 +1281,7 @@ ID：{id}
         let name = &user_data.name;
         let count = user_data.count;
 
-        let msg = format!("[用户]\n{}\n\n[神断次数]\n{} 次", name, count);
+        let msg = format!("[用户]\n{name}\n\n[神断次数]\n{count} 次");
         plugin_utils::build_and_send_message(event, data, &msg);
     }
 
@@ -1487,7 +1472,7 @@ ID：{id}
                 end,
                 page_shindans
                     .iter()
-                    .map(|(command, count)| format!("{}：{} 次", command, count))
+                    .map(|(command, count)| format!("{command}：{count} 次"))
                     .collect::<Vec<String>>()
                     .join("\n")
             );
@@ -1590,9 +1575,7 @@ async fn main() {
 
     let data = Arc::new(Data::new());
     let bot = PluginBuilder::get_runtime_bot();
-    let client = Arc::new(
-        ShindanClient::new(data.config.plugin.domain.parse().unwrap()).unwrap(),
-    );
+    let client = Arc::new(ShindanClient::new(data.config.plugin.domain.parse().unwrap()).unwrap());
 
     PluginBuilder::on_msg({
         let data = Arc::clone(&data);
@@ -1608,11 +1591,7 @@ async fn main() {
                     let message = &event.message;
                     let segment = message.get_from_index(0).unwrap();
                     if segment.type_ != "at"
-                        || segment.data["qq"]
-                            .as_str()
-                            .unwrap()
-                            .parse::<i64>()
-                            .unwrap()
+                        || segment.data["qq"].as_str().unwrap().parse::<i64>().unwrap()
                             != event.self_id
                     {
                         return;
@@ -1651,8 +1630,7 @@ async fn main() {
                                     .await
                             }
                             "删除神断命令" => {
-                                commands::delete_shindan_command(&event, &data, &params, cmd)
-                                    .await
+                                commands::delete_shindan_command(&event, &data, &params, cmd).await
                             }
                             "随机神断命令" => {
                                 commands::random_shindan_command(
@@ -1667,18 +1645,14 @@ async fn main() {
                                 commands::set_shindan_mode(&event, &data, &params, cmd).await
                             }
                             "修改神断命令" => {
-                                commands::modify_shindan_command(&event, &data, &params, cmd)
-                                    .await
+                                commands::modify_shindan_command(&event, &data, &params, cmd).await
                             }
                             "查看用户神断次数" => {
-                                commands::view_user_shindan_count(
-                                    &bot, &event, &data, &params, cmd,
-                                )
-                                .await
+                                commands::view_user_shindan_count(&bot, &event, &data, &params, cmd)
+                                    .await
                             }
                             "用户神断次数排行榜" => {
-                                commands::user_shindan_count_rank(&event, &data, &params, cmd)
-                                    .await
+                                commands::user_shindan_count_rank(&event, &data, &params, cmd).await
                             }
                             "查看神断信息" => {
                                 commands::view_shindan_info(&event, &data, &params, cmd).await
@@ -1687,10 +1661,8 @@ async fn main() {
                                 commands::shindan_count_rank(&event, &data, &params, cmd).await
                             }
                             "模糊查找神断命令" => {
-                                commands::fuzzy_search_shindan_command(
-                                    &event, &data, &params, cmd,
-                                )
-                                .await
+                                commands::fuzzy_search_shindan_command(&event, &data, &params, cmd)
+                                    .await
                             }
                             _ => {}
                         }
