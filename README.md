@@ -4,8 +4,7 @@ kovi-plugin-shindan-maker
 [<img alt="github" src="https://img.shields.io/badge/github-araea/kovi_plugin_shindan_maker-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/araea/kovi-plugin-shindan-maker)
 [<img alt="crates.io" src="https://img.shields.io/crates/v/kovi-plugin-shindan-maker.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/kovi-plugin-shindan-maker)
 
-Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。
-内置 690+ 占卜项。
+Kovi 的 [ShindanMaker](https://en.shindanmaker.com/) 占卜插件。内置 690+ 占卜项。
 
 ## 前置
 
@@ -68,6 +67,7 @@ commands = ["神断帮助", "bz"]
 ### `shindans.toml` - 占卜项
 
 添加 : 使用 `添加神断` 指令
+
 删除 : 编辑文件或使用 `删除神断` 指令
 
 ## 致谢
