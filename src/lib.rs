@@ -536,7 +536,7 @@ mod plugin_utils {
     }
 
     fn send_command_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
-        let msg = format!("{command}");
+        let msg = command.to_string();
         build_and_send_message(event, data, &msg);
     }
 
@@ -754,7 +754,7 @@ mod commands {
 
         // 帮助提示
         if let Some(example_cmd) = command_names.get(1) {
-            write!(msg, "\n{}{0} -h / {}{0} --help", prefix, example_cmd).unwrap();
+            write!(msg, "\n{0}{1} -h / {0}{1} --help", prefix, example_cmd).unwrap();
         }
 
         plugin_utils::build_and_send_message(event, data, msg.trim());
