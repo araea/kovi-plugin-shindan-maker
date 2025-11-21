@@ -536,7 +536,7 @@ mod plugin_utils {
     }
 
     fn send_command_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
-        let msg = format!("神断命令: {command}");
+        let msg = format!("{command}");
         build_and_send_message(event, data, &msg);
     }
 
