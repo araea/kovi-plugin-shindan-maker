@@ -1,9 +1,6 @@
 //! This is a single-file version of the kovi-plugin-shindan-maker crate.
 //! All modules have been merged into this lib.rs file.
 
-// The original file used include_str!("../README.md"), which is not possible in this context.
-// #![doc = include_str!("../README.md")]
-
 // --- START OF MODULE: types ---
 mod types {
     use serde::{Deserialize, Serialize};
@@ -282,7 +279,7 @@ mod plugin_utils {
     use super::data::Data;
     use super::types::{Config, UserData};
 
-    const SHINDAN_ERROR_MSG: &str = "神断失败！\n\n[原因]\n神累了";
+    const SHINDAN_ERROR_MSG: &str = "神断失败: 神累了";
 
     pub(crate) fn should_process_group(
         group_id: Option<&i64>,
@@ -539,7 +536,7 @@ mod plugin_utils {
     }
 
     fn send_command_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
-        let msg = format!("[神断命令]\n{command}");
+        let msg = format!("神断命令: {command}");
         build_and_send_message(event, data, &msg);
     }
 
@@ -576,9 +573,9 @@ mod plugin_utils {
             Some(info) => info,
             None => {
                 let error_msg = if matches!(command_type, ShindanCommandType::Random) {
-                    "神断失败！\n\n[原因]\n没有可用的神断。请先添加神断。"
+                    "神断失败: 没有可用的神断，请先添加。"
                 } else {
-                    "神断失败！\n\n[原因]\n找不到指定的神断命令。"
+                    "神断失败: 找不到指定的神断命令。"
                 };
                 build_and_send_message(event, data, error_msg);
                 return;
@@ -602,9 +599,7 @@ mod plugin_utils {
     }
 
     fn show_help_message(event: &Arc<MsgEvent>, data: &Arc<Data>, command: &str) {
-        let help_msg = format!(
-            "[指令]\n{command}\n\n[功能]\n神断命令\n\n[参数]\n\n1. 名字（可选）\n2. 模式 -t / -i（可选）\n\n[示例]\n\n1. {command}\n2. {command} 九条可憐\n3. {command} 九条可憐 -t\n4. {command} 九条可憐 -i\n5. {command} @九条可憐"
-        );
+        let help_msg = format!("{command} [名字] [-t/-i]\n示例: {command} 九条可憐 -i");
         build_and_send_message(event, data, &help_msg);
     }
 
@@ -715,6 +710,7 @@ mod plugin_utils {
 // --- START OF MODULE: commands ---
 mod commands {
     use std::cmp;
+    use std::fmt::Write;
     use std::sync::Arc;
 
     use kovi::bot::message::Segment;
@@ -727,41 +723,41 @@ mod commands {
     use super::plugin_utils::ShindanCommandType;
 
     pub(crate) fn plugin_commands(event: &Arc<MsgEvent>, data: &Arc<Data>) {
-        let commands: String = data
+        let prefix = data
+            .config
+            .plugin
+            .prefixes
+            .first()
+            .map(|s| s.as_str())
+            .unwrap_or("");
+
+        // 收集所有指令名称（取别名列表中的第一个）
+        let command_names: Vec<String> = data
             .commands
             .command
             .iter()
-            .enumerate()
-            .map(|(i, cmd)| format!("{:>2}. {}", i + 1, cmd.commands.join(" / ")))
-            .collect::<Vec<_>>()
-            .join("\n");
+            .map(|cmd| cmd.commands.first().unwrap().to_string())
+            .collect();
 
-        let prefix_str = if !data.config.plugin.prefixes.is_empty() {
-            format!(
-                "\n\n[指令.前缀]\n{}",
-                data.config.plugin.prefixes.join("\n")
-            )
-        } else {
-            String::new()
-        };
+        let mut msg = String::new();
 
-        let example_cmd = &data.commands.command[1].commands[0];
-        let msg = format!(
-            "\
-[指令]
+        // 双栏排版
+        for chunk in command_names.chunks(2) {
+            if let Some(first) = chunk.first() {
+                write!(msg, "{}{}", prefix, first).unwrap();
+            }
+            if let Some(second) = chunk.get(1) {
+                write!(msg, " {}{}", prefix, second).unwrap();
+            }
+            msg.push('\n');
+        }
 
-{commands}{prefix_str}
+        // 帮助提示
+        if let Some(example_cmd) = command_names.get(1) {
+            write!(msg, "\n{}{0} -h / {}{0} --help", prefix, example_cmd).unwrap();
+        }
 
-[帮助]
--h   /   --help   查看帮助
-
-[帮助.示例]
-
-1. {example_cmd} -h
-2. {example_cmd} --help"
-        );
-
-        plugin_utils::build_and_send_message(event, data, &msg);
+        plugin_utils::build_and_send_message(event, data, msg.trim());
     }
 
     pub(crate) async fn add_shindan_command(
@@ -771,25 +767,8 @@ mod commands {
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-添加神断命令
-
-[参数]
-
-1. 神断命令
-2. 神断 ID
-3. 模式 text/image（可选）
-
-[示例]
-
-1. {command} 声优 12345
-2. {command} 声优 12345 text
-3. {command} 声优 12345 image"
-        );
+        // 简洁帮助
+        let help_msg = format!("{command} <命令> <ID> [模式]\n示例: {command} 声优 12345 image");
 
         if plugin_utils::should_show_help(params, 2) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
@@ -811,25 +790,7 @@ mod commands {
             .iter()
             .find(|s| s.command == shindan_command)
         {
-            let id = &s.id;
-            let mode = &s.mode;
-            let shindan_title = &s.title;
-            let shindan_command = &s.command;
-            let description = &s.description;
-
-            let error_msg = format!(
-                "添加失败！
-
-[原因]
-神断命令重复
-
-[重复项]
-ID：{id}
-标题：{shindan_title}
-命令：{shindan_command}
-模式：{mode}
-描述：{description}"
-            );
+            let error_msg = format!("添加失败: 命令重复\n现有: {} (ID: {})", s.command, s.id);
             plugin_utils::build_and_send_message(event, data, &error_msg);
             return;
         }
@@ -842,24 +803,7 @@ ID：{id}
             .iter()
             .find(|s| s.id == id)
         {
-            let id = &s.id;
-            let mode = &s.mode;
-            let shindan_title = &s.title;
-            let shindan_command = &s.command;
-            let description = &s.description;
-            let error_msg = format!(
-                "添加失败！
-
-[原因]
-神断 ID 重复
-
-[重复项]
-ID：{id}
-标题：{shindan_title}
-命令：{shindan_command}
-模式：{mode}
-描述：{description}"
-            );
+            let error_msg = format!("添加失败: ID 重复\n现有: {} (ID: {})", s.command, s.id);
             plugin_utils::build_and_send_message(event, data, &error_msg);
             return;
         }
@@ -867,44 +811,25 @@ ID：{id}
         let mode = params.get(2).unwrap_or(&"image");
 
         if *mode != "text" && *mode != "image" {
-            let error_msg = "添加失败！
-
-[原因]
-模式错误
-
-[支持模式]
-text / image"
-                .to_string();
-            plugin_utils::build_and_send_message(event, data, &error_msg);
+            plugin_utils::build_and_send_message(
+                event,
+                data,
+                "添加失败: 模式错误 (仅支持 text / image)",
+            );
             return;
         }
 
         let (title, description) = match client.get_title_with_description(id).await {
             Ok((title, description)) => (title, description),
             Err(_) => {
-                let error_msg = "添加失败！
-
-[原因]
-网络波动 / 未知神断"
-                    .to_string();
-                plugin_utils::build_and_send_message(event, data, &error_msg);
+                plugin_utils::build_and_send_message(event, data, "添加失败: 网络波动或无效ID");
                 return;
             }
         };
 
         data.add_shindan(id, &title, &description, shindan_command, mode);
 
-        let success_msg = format!(
-            "添加成功！
-
-[新增]
-ID：{id}
-标题：{title}
-命令：{shindan_command}
-模式：{mode}
-描述：{description}"
-        );
-
+        let success_msg = format!("添加成功: {}\nID: {}\n模式: {}", title, id, mode);
         plugin_utils::build_and_send_message(event, data, &success_msg);
     }
 
@@ -914,21 +839,7 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-删除神断命令
-
-[参数]
-
-1. 神断命令
-
-[示例]
-
-1. {command} 声优"
-        );
+        let help_msg = format!("{command} <命令>\n示例: {command} 声优");
 
         if plugin_utils::should_show_help(params, 1) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
@@ -936,49 +847,28 @@ ID：{id}
         }
 
         let shindan_command = params[0];
-
-        let success_msg = {
+        let deleted_info = {
             let shindan_lock = data.shindans.read().unwrap();
-            let shindan = shindan_lock
+            shindan_lock
                 .shindan
                 .iter()
-                .find(|s| s.command == shindan_command);
-            if shindan.is_none() {
-                let error_msg = "删除失败！
-
-[原因]
-神断不存在"
-                    .to_string();
-                plugin_utils::build_and_send_message(event, data, &error_msg);
-                return;
-            }
-
-            let shindan = shindan.unwrap();
-            let id = &shindan.id;
-            let mode = &shindan.mode;
-            let title = &shindan.title;
-            let description = &shindan.description;
-            format!(
-                "删除成功！
-
-[删除]
-ID：{id}
-标题：{title}
-命令：{shindan_command}
-模式：{mode}
-描述：{description}"
-            )
+                .find(|s| s.command == shindan_command)
+                .cloned()
         };
 
-        {
-            data.shindans
-                .write()
-                .unwrap()
-                .shindan
-                .retain(|s| s.command != shindan_command);
+        if let Some(shindan) = deleted_info {
+            {
+                data.shindans
+                    .write()
+                    .unwrap()
+                    .shindan
+                    .retain(|s| s.command != shindan_command);
+            }
+            let msg = format!("删除成功: {}\nID: {}", shindan.title, shindan.id);
+            plugin_utils::build_and_send_message(event, data, &msg);
+        } else {
+            plugin_utils::build_and_send_message(event, data, "删除失败: 神断不存在");
         }
-
-        plugin_utils::build_and_send_message(event, data, &success_msg);
     }
 
     pub(crate) async fn random_shindan_command(
@@ -1023,38 +913,34 @@ ID：{id}
 
     pub(crate) async fn shindan_command_list(event: &Arc<MsgEvent>, data: &Arc<Data>) {
         const PAGE_SIZE: usize = 100;
-
         let shindans = data.shindans.read().unwrap();
-
         let commands: Vec<String> = shindans.shindan.iter().map(|s| s.command.clone()).collect();
 
-        let total_commands = commands.len();
-        let total_pages = total_commands.div_ceil(PAGE_SIZE);
-
-        if total_commands == 0 {
-            let msg = "获取失败！\n\n[原因]\n无神断命令".to_string();
-            plugin_utils::build_and_send_message(event, data, &msg);
+        if commands.is_empty() {
+            plugin_utils::build_and_send_message(event, data, "列表为空");
             return;
         }
 
+        let total_pages = commands.len().div_ceil(PAGE_SIZE);
         let mut forward = Vec::new();
 
         for page in 0..total_pages {
             let start = page * PAGE_SIZE;
-            let end = cmp::min(start + PAGE_SIZE, total_commands);
-
+            let end = cmp::min(start + PAGE_SIZE, commands.len());
             let page_commands = &commands[start..end];
-            let message = format!("[{}-{}]\n{}", start + 1, end, page_commands.join(" "));
+            let message = format!(
+                "页 {}/{}\n{}",
+                page + 1,
+                total_pages,
+                page_commands.join(" ")
+            );
 
-            let segment = Segment::new(
+            forward.push(Segment::new(
                 "node",
                 json!({
-                    "content": [
-                        {"type": "text", "data": {"text": message}}
-                    ]
+                    "content": [{"type": "text", "data": {"text": message}}]
                 }),
-            );
-            forward.push(segment);
+            ));
         }
 
         event.reply(Message::from(forward));
@@ -1066,23 +952,7 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-设置神断
-
-[参数]
-
-1. 神断命令
-2. 模式 text/image
-
-[示例]
-
-1. {command} 声优 text
-2. {command} 声优 image"
-        );
+        let help_msg = format!("{command} <命令> <模式>\n示例: {command} 声优 text");
 
         if plugin_utils::should_show_help(params, 2) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
@@ -1091,64 +961,24 @@ ID：{id}
 
         let shindan_command = params[0];
         let mode = params[1];
+
         if mode != "text" && mode != "image" {
-            let error_msg = "设置失败！
-
-[原因]
-模式错误
-
-[支持模式]
-text / image"
-                .to_string();
-            plugin_utils::build_and_send_message(event, data, &error_msg);
+            plugin_utils::build_and_send_message(event, data, "设置失败: 模式错误");
             return;
         }
 
-        let success_msg = {
-            let shindan_lock = data.shindans.read().unwrap();
-            let shindan = shindan_lock
-                .shindan
-                .iter()
-                .find(|s| s.command == shindan_command);
-            if shindan.is_none() {
-                let error_msg = "设置失败！
-
-[原因]
-神断不存在"
-                    .to_string();
-                plugin_utils::build_and_send_message(event, data, &error_msg);
-                return;
-            }
-
-            let shindan = shindan.unwrap();
-
-            let id = &shindan.id;
-            let title = &shindan.title;
-            let description = &shindan.description;
-            format!(
-                "设置成功！
-
-[设置]
-ID：{id}
-标题：{title}
-命令：{shindan_command}
-模式：{mode}
-描述：{description}"
-            )
-        };
-
+        let mut shindans = data.shindans.write().unwrap();
+        if let Some(s) = shindans
+            .shindan
+            .iter_mut()
+            .find(|s| s.command == shindan_command)
         {
-            let mut shindans = data.shindans.write().unwrap();
-            if let Some(s) = shindans
-                .shindan
-                .iter_mut()
-                .find(|s| s.command == shindan_command)
-            {
-                s.mode = mode.to_string();
-            }
+            s.mode = mode.to_string();
+            let msg = format!("设置成功: {} -> {}", shindan_command, mode);
+            plugin_utils::build_and_send_message(event, data, &msg);
+        } else {
+            plugin_utils::build_and_send_message(event, data, "设置失败: 神断不存在");
         }
-
-        plugin_utils::build_and_send_message(event, data, &success_msg);
     }
 
     pub(crate) async fn modify_shindan_command(
@@ -1157,79 +987,24 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-修改神断命令
-
-[参数]
-
-1. 神断命令（旧）
-2. 神断命令（新）
-
-[示例]
-
-1. {command} 声优 配音演员
-2. {command} 配音演员 配音员"
-        );
+        let help_msg = format!("{command} <旧命令> <新命令>\n示例: {command} 声优 配音");
 
         if plugin_utils::should_show_help(params, 2) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
             return;
         }
 
-        let old_shindan_command = params[0];
-        let new_shindan_command = params[1];
+        let old_cmd = params[0];
+        let new_cmd = params[1];
 
-        let success_msg = {
-            let shindan_lock = data.shindans.read().unwrap();
-            let shindan = shindan_lock
-                .shindan
-                .iter()
-                .find(|s| s.command == old_shindan_command);
-            if shindan.is_none() {
-                let error_msg = "修改失败！
-
-[原因]
-神断不存在"
-                    .to_string();
-                plugin_utils::build_and_send_message(event, data, &error_msg);
-                return;
-            }
-
-            let shindan = shindan.unwrap();
-            let id = &shindan.id;
-            let title = &shindan.title;
-            let description = &shindan.description;
-            let mode = &shindan.mode;
-            format!(
-                "修改成功！
-
-[修改]
-ID：{id}
-标题：{title}
-命令：{old_shindan_command} -> {new_shindan_command}
-模式：{mode}
-描述：{description}"
-            )
-        };
-
-        {
-            if let Some(s) = data
-                .shindans
-                .write()
-                .unwrap()
-                .shindan
-                .iter_mut()
-                .find(|s| s.command == old_shindan_command)
-            {
-                s.command = new_shindan_command.to_string();
-            }
+        let mut shindans = data.shindans.write().unwrap();
+        if let Some(s) = shindans.shindan.iter_mut().find(|s| s.command == old_cmd) {
+            s.command = new_cmd.to_string();
+            let msg = format!("修改成功: {} -> {}", old_cmd, new_cmd);
+            plugin_utils::build_and_send_message(event, data, &msg);
+        } else {
+            plugin_utils::build_and_send_message(event, data, "修改失败: 神断不存在");
         }
-
-        plugin_utils::build_and_send_message(event, data, &success_msg);
     }
 
     pub(crate) async fn view_user_shindan_count(
@@ -1239,22 +1014,7 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-查看用户神断次数
-
-[参数]
-
-1. @用户（可选）
-
-[示例]
-
-1. {command}
-2. {command} @九条可憐"
-        );
+        let help_msg = format!("{command} [@用户]");
 
         if plugin_utils::should_show_help(params, 0) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
@@ -1264,25 +1024,14 @@ ID：{id}
         let (_name, id) = plugin_utils::get_target_name_with_id(bot, event, params)
             .await
             .unwrap();
-
         let user_data_lock = data.user_data.read().unwrap();
-        let user_data = user_data_lock.user.iter().find(|u| u.id == id);
-        if user_data.is_none() {
-            let error_msg = "查看失败！
 
-[原因]
-用户不存在"
-                .to_string();
-            plugin_utils::build_and_send_message(event, data, &error_msg);
-            return;
+        if let Some(u) = user_data_lock.user.iter().find(|u| u.id == id) {
+            let msg = format!("{}\n神断次数: {}", u.name, u.count);
+            plugin_utils::build_and_send_message(event, data, &msg);
+        } else {
+            plugin_utils::build_and_send_message(event, data, "用户无记录");
         }
-
-        let user_data = user_data.unwrap();
-        let name = &user_data.name;
-        let count = user_data.count;
-
-        let msg = format!("[用户]\n{name}\n\n[神断次数]\n{count} 次");
-        plugin_utils::build_and_send_message(event, data, &msg);
     }
 
     pub(crate) async fn user_shindan_count_rank(
@@ -1291,61 +1040,30 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-用户神断次数排行榜
-
-[参数]
-
-1. 数量（可选）
-
-[示例]
-
-1. {command}
-2. {command} 10"
-        );
-
+        let help_msg = format!("{command} [数量]");
         if plugin_utils::should_show_help(params, 0) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
             return;
         }
 
-        let count = plugin_utils::parse_count(data, params);
-
+        let count = plugin_utils::parse_count(data, params) as usize;
         let user_data_lock = data.user_data.read().unwrap();
         let mut user_data = user_data_lock.user.clone();
         user_data.sort_by(|a, b| b.count.cmp(&a.count));
 
-        let total_users = user_data.len();
-        let total_pages = 1;
-
-        if total_users == 0 {
-            let msg = "获取失败！\n\n[原因]\n无用户".to_string();
-            plugin_utils::build_and_send_message(event, data, &msg);
+        if user_data.is_empty() {
+            plugin_utils::build_and_send_message(event, data, "无用户数据");
             return;
         }
 
-        for page in 0..total_pages {
-            let start = (page * count) as usize;
-            let end = cmp::min(start + count as usize, total_users);
-            let page_users = &user_data[start..end];
+        let end = cmp::min(count, user_data.len());
+        let msg = user_data[..end]
+            .iter()
+            .map(|u| format!("{} : {}", u.name, u.count))
+            .collect::<Vec<_>>()
+            .join("\n");
 
-            let message = format!(
-                "[{}-{}]\n{}",
-                start + 1,
-                end,
-                page_users
-                    .iter()
-                    .map(|u| format!("{}：{} 次", u.name, u.count))
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            );
-
-            plugin_utils::build_and_send_message(event, data, &message);
-        }
+        plugin_utils::build_and_send_message(event, data, &msg);
     }
 
     pub(crate) async fn view_shindan_info(
@@ -1354,61 +1072,27 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-查看神断信息
-
-[参数]
-
-1. 神断命令 / 神断 ID
-
-[示例]
-
-1. {command} 声优
-2. {command} 12345"
-        );
-
+        let help_msg = format!("{command} <命令/ID>");
         if plugin_utils::should_show_help(params, 1) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
             return;
         }
 
-        let shindan_command_or_shindan_id = params[0];
+        let target = params[0];
         let shindan_lock = data.shindans.read().unwrap();
-        let shindan = shindan_lock.shindan.iter().find(|s| {
-            s.command == shindan_command_or_shindan_id || s.id == shindan_command_or_shindan_id
-        });
-        if shindan.is_none() {
-            let error_msg = "查看失败！
-
-[原因]
-神断不存在"
-                .to_string();
-            plugin_utils::build_and_send_message(event, data, &error_msg);
-            return;
+        if let Some(s) = shindan_lock
+            .shindan
+            .iter()
+            .find(|s| s.command == target || s.id == target)
+        {
+            let msg = format!(
+                "标题: {}\nID: {}\n命令: {}\n模式: {}\n描述: {}",
+                s.title, s.id, s.command, s.mode, s.description
+            );
+            plugin_utils::build_and_send_message(event, data, &msg);
+        } else {
+            plugin_utils::build_and_send_message(event, data, "神断不存在");
         }
-
-        let shindan = shindan.unwrap();
-
-        let id = &shindan.id;
-        let mode = &shindan.mode;
-        let title = &shindan.title;
-        let description = &shindan.description;
-        let shindan_command = &shindan.command;
-
-        let msg = format!(
-            "[神断信息]
-ID：{id}
-标题：{title}
-命令：{shindan_command}
-模式：{mode}
-描述：{description}"
-        );
-
-        plugin_utils::build_and_send_message(event, data, &msg);
     }
 
     pub(crate) async fn shindan_count_rank(
@@ -1417,68 +1101,30 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-神断触发次数排行榜
-
-[参数]
-
-1. 数量（可选）
-
-[示例]
-
-1. {command}
-2. {command} 10"
-        );
-
+        let help_msg = format!("{command} [数量]");
         if plugin_utils::should_show_help(params, 0) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
             return;
         }
 
-        let count = plugin_utils::parse_count(data, params);
+        let count = plugin_utils::parse_count(data, params) as usize;
+        let shindan_lock = data.shindans.read().unwrap();
+        let mut items: Vec<_> = shindan_lock.shindan.iter().collect();
+        items.sort_by(|a, b| b.count.cmp(&a.count));
 
-        let mut shindan_count = {
-            let shindan_lock = data.shindans.read().unwrap();
-            shindan_lock
-                .shindan
-                .iter()
-                .map(|s| (s.command.clone(), s.count))
-                .collect::<Vec<(String, u32)>>()
-        };
-
-        shindan_count.sort_by(|a, b| b.1.cmp(&a.1));
-
-        let total_shindans = shindan_count.len();
-        let total_pages = 1;
-
-        if total_shindans == 0 {
-            let msg = "获取失败！\n\n[原因]\n无神断".to_string();
-            plugin_utils::build_and_send_message(event, data, &msg);
+        if items.is_empty() {
+            plugin_utils::build_and_send_message(event, data, "无神断数据");
             return;
         }
 
-        for page in 0..total_pages {
-            let start = (page * count) as usize;
-            let end = cmp::min(start + count as usize, total_shindans);
+        let end = cmp::min(count, items.len());
+        let msg = items[..end]
+            .iter()
+            .map(|s| format!("{} : {}", s.command, s.count))
+            .collect::<Vec<_>>()
+            .join("\n");
 
-            let page_shindans = &shindan_count[start..end];
-            let message = format!(
-                "[{}-{}]\n{}",
-                start + 1,
-                end,
-                page_shindans
-                    .iter()
-                    .map(|(command, count)| format!("{command}：{count} 次"))
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            );
-
-            plugin_utils::build_and_send_message(event, data, &message);
-        }
+        plugin_utils::build_and_send_message(event, data, &msg);
     }
 
     pub(crate) async fn fuzzy_search_shindan_command(
@@ -1487,74 +1133,41 @@ ID：{id}
         params: &[&str],
         command: &str,
     ) {
-        let help_msg = format!(
-            "[指令]
-{command}
-
-[功能]
-模糊查找神断命令
-
-[参数]
-
-1. 神断命令
-2. 数量（可选）
-
-[示例]
-
-1. {command} 声优"
-        );
-
+        let help_msg = format!("{command} <关键词> [数量]");
         if plugin_utils::should_show_help(params, 1) {
             plugin_utils::build_and_send_message(event, data, &help_msg);
             return;
         }
 
-        let shindan_command = params[0];
-
-        let count = plugin_utils::parse_count(data, params);
+        let keyword = params[0];
+        let count = plugin_utils::parse_count(data, params) as usize;
 
         let shindan_lock = data.shindans.read().unwrap();
-        let shindan = shindan_lock
+        let matches: Vec<_> = shindan_lock
             .shindan
             .iter()
-            .filter(|s| s.command.contains(shindan_command))
-            .collect::<Vec<_>>();
+            .filter(|s| s.command.contains(keyword))
+            .collect();
 
-        let total_shindans = shindan.len();
-        let total_pages = 1;
-
-        if total_shindans == 0 {
-            let msg = "获取失败！\n\n[原因]\n无神断".to_string();
-            plugin_utils::build_and_send_message(event, data, &msg);
+        if matches.is_empty() {
+            plugin_utils::build_and_send_message(event, data, "未找到相关神断");
             return;
         }
 
-        for page in 0..total_pages {
-            let start = (page * count) as usize;
-            let end = cmp::min(start + count as usize, total_shindans);
+        let total = matches.len();
+        let end = cmp::min(count, total);
+        let mut msg = matches[..end]
+            .iter()
+            .enumerate()
+            .map(|(i, s)| format!("{}. {}", i + 1, s.command))
+            .collect::<Vec<_>>()
+            .join("\n");
 
-            let page_shindans = &shindan[start..end];
-
-            let mut message = format!(
-                "[{}-{}]\n\n{}",
-                start + 1,
-                end,
-                page_shindans
-                    .iter()
-                    .enumerate()
-                    .map(|(i, s)| format!("{}. {}", i + start + 1, s.command))
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            );
-
-            if end < total_shindans {
-                message.push_str(
-                    format!("\n...\n\n[提示]\n共 {total_shindans} 项\n输入数量查看更多").as_str(),
-                );
-            }
-
-            plugin_utils::build_and_send_message(event, data, &message);
+        if end < total {
+            msg.push_str(&format!("\n... 共 {} 项", total));
         }
+
+        plugin_utils::build_and_send_message(event, data, &msg);
     }
 }
 // --- END OF MODULE: commands ---
