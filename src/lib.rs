@@ -525,7 +525,7 @@ mod plugin_utils {
         event.reply(msg);
     }
 
-    async fn capture_html_with_chart(html: &str, browser: &Arc<Browser>) -> Result<String> {
+    async fn capture_html_with_chart(html: &str, browser: &Browser) -> Result<String> {
         let tab = browser.new_tab().await?;
         tab.set_content(html).await?;
         time::sleep(time::Duration::from_secs(2)).await;
@@ -1302,11 +1302,12 @@ async fn main() {
 
     PluginBuilder::drop({
         let data = Arc::clone(&data);
+
         move || {
             let data = Arc::clone(&data);
             async move {
                 // 关闭全局浏览器实例
-                Browser::close_instance().await.unwrap();
+                Browser::instance().await.close_async().await.unwrap();
 
                 // 保存数据
                 data.save();
