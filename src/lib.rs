@@ -1306,7 +1306,7 @@ async fn main() {
             let data = Arc::clone(&data);
             async move {
                 // 关闭全局浏览器实例
-                Browser::close_instance();
+                Browser::close_instance().await.unwrap();
 
                 // 保存数据
                 data.save();
