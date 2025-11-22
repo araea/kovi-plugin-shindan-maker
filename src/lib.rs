@@ -505,7 +505,7 @@ mod plugin_utils {
 
         let browser = Browser::instance().await;
         let base64 = {
-            if html.contains("chart.js") {
+            if html.contains("chart.js") || html.contains("chartType") {
                 capture_html_with_chart(&html, &browser).await
             } else {
                 browser.capture_html(&html, "#title_and_result").await
