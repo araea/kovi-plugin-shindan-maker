@@ -104,13 +104,13 @@ is_quote = false
 
 # 神断网区域
 # 可选："Jp", "En", "Cn", "Kr", "Th"
-domain = "Cn"
+domain = "Jp"
 
 # `随机神断` 时提示命令
 random_return_command = true
 
 # 排行榜最多显示
-rank_max = 30
+rank_max = 20
 "#;
 
     pub(crate) const COMMANDS_TOML: &str = r#"
