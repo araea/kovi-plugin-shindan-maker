@@ -1,6 +1,6 @@
 [package]
 name = "kovi-plugin-shindan-maker"
-version = "0.1.17"
+version = "0.1.18"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["Nawyjx <3373167460@qq.com>"]
@@ -13,7 +13,7 @@ keywords = ["kovi", "kovi-plugin", "shindan-maker", "fortune-tellings", "diagnos
 kovi = ">= 0.12"
 anyhow = "1.0"
 rand = "0.8.5"
-cdp-html-shot = "0.1"
+cdp-html-shot = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 shindan-maker = { version = "0.1", features = ["html"] }
 
