@@ -391,10 +391,8 @@ mod plugin_utils {
                 if !params.is_empty() {
                     Ok((params.join(" "), "".to_string()))
                 } else {
-                    Ok((
-                        event.get_sender_nickname().to_string(),
-                        event.user_id.to_string(),
-                    ))
+                    let name = get_member_nickname(bot, event, &event.user_id.to_string()).await?;
+                    Ok((name, event.user_id.to_string()))
                 }
             }
         }
@@ -405,6 +403,15 @@ mod plugin_utils {
         event: &Arc<MsgEvent>,
         user_id: &str,
     ) -> Result<String> {
+        if user_id == event.user_id.to_string() {
+            // 将 event.sender.nickname 字段直接获取
+            if let Some(nickname) = event.sender.nickname.as_ref()
+                && !nickname.is_empty() {
+                    return Ok(nickname.to_string());
+                }
+        }
+
+        // 如果是查询他人，或者 event 中没有 nickname，则回退到 API
         let group_id = event
             .group_id
             .ok_or_else(|| anyhow::anyhow!("No group id"))?;
@@ -686,14 +693,18 @@ mod plugin_utils {
     }
 
     pub(crate) async fn update_user_name(event: &Arc<MsgEvent>, data: &Arc<Data>) {
-        let now_name = event.get_sender_nickname();
+        let now_name = match event.sender.nickname.as_deref() {
+            Some(name) => name.to_string(),
+            None => event.get_sender_nickname().to_string(),
+        };
+
         let mut user_data = data.user_data.write().unwrap();
         if let Some(u) = user_data
             .user
             .iter_mut()
             .find(|u| u.id.parse::<i64>().unwrap() == event.user_id && u.name != now_name)
         {
-            u.name = now_name.to_string();
+            u.name = now_name;
         }
     }
 
