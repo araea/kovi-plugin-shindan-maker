@@ -272,7 +272,7 @@ mod plugin_utils {
     use kovi::serde_json::json;
     use kovi::tokio::time;
     use kovi::{Message, MsgEvent, RuntimeBot, log};
-    use rand::prelude::SliceRandom;
+    use rand::seq::IndexedRandom;
     use shindan_maker::{Segments, ShindanClient};
     use std::sync::Arc;
 
@@ -406,9 +406,10 @@ mod plugin_utils {
         if user_id == event.user_id.to_string() {
             // 将 event.sender.nickname 字段直接获取
             if let Some(nickname) = event.sender.nickname.as_ref()
-                && !nickname.is_empty() {
-                    return Ok(nickname.to_string());
-                }
+                && !nickname.is_empty()
+            {
+                return Ok(nickname.to_string());
+            }
         }
 
         // 如果是查询他人，或者 event 中没有 nickname，则回退到 API
@@ -622,14 +623,11 @@ mod plugin_utils {
         let guard = data.shindans.read().unwrap();
         match command_type {
             ShindanCommandType::Random => {
-                guard
-                    .shindan
-                    .choose(&mut rand::thread_rng())
-                    .map(|s| ShindanData {
-                        id: s.id.clone(),
-                        command: s.command.clone(),
-                        mode: s.mode.clone(),
-                    })
+                guard.shindan.choose(&mut rand::rng()).map(|s| ShindanData {
+                    id: s.id.clone(),
+                    command: s.command.clone(),
+                    mode: s.mode.clone(),
+                })
             }
             ShindanCommandType::Specific(cmd) => guard
                 .shindan
